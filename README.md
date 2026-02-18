@@ -1,1 +1,162 @@
 # Zeittracker
+zeittracker/
+│
+├── index.html       ← App-Oberfläche
+├── style.css        ← Design
+├── main.js          ← Logik
+└── service-worker.js ← Offline / PWA
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeittracker</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<h1>Wo ist meine Zeit geblieben?</h1>
+
+<div class="container">
+
+  <label>Kategorie</label>
+  <select id="category">
+    <option>Arbeit</option>
+    <option>Social Media</option>
+    <option>Lernen</option>
+    <option>Freizeit</option>
+    <option>Schlaf</option>
+  </select>
+
+  <br><br>
+
+  <label>Minuten</label>
+  <input type="number" id="minutes">
+
+  <button onclick="addTime()">Zeit hinzufügen</button>
+
+  <h3>Wochenübersicht</h3>
+  <div id="report"></div>
+
+</div>
+
+<script src="main.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log('Service Worker registriert'))
+    .catch(err => console.log(err));
+}
+</script>
+
+</body>
+</html>
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+// Daten laden oder initialisieren
+let data = JSON.parse(localStorage.getItem("timeData")) || {
+  "Arbeit": 0,
+  "Social Media": 0,
+  "Lernen": 0,
+  "Freizeit": 0,
+  "Schlaf": 0
+};
+
+function addTime() {
+  let category = document.getElementById("category").value;
+  let minutes = Number(document.getElementById("minutes").value);
+
+  if (!minutes || minutes <= 0) {
+    alert("Bitte Minuten eingeben");
+    return;
+  }
+
+  data[category] += minutes;
+
+  // Speichern im lokalen Speicher
+  localStorage.setItem("timeData", JSON.stringify(data));
+
+  updateReport();
+}
+
+function updateReport() {
+  let report = "";
+  for (let category in data) {
+    report += `${category}: ${data[category]} Minuten<br>`;
+  }
+  document.getElementById("report").innerHTML = report;
+}
+
+// Direkt beim Laden anzeigen
+updateReport();
+const cacheName = "zeittracker-v1";
+const assets = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/main.js"
+];
+
+self.addEventListener("install", e => {
+  e.waitUntil(
+    caches.open(cacheName).then(cache => cache.addAll(assets))
+  );
+});
+
+self.addEventListener("fetch", e => {
+  e.respondWith(
+    caches.match(e.request).then(response => response || fetch(e.request))
+  );
+});
+{
+  "name": "Wo ist meine Zeit geblieben?",
+  "short_name": "Zeittracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f2",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
