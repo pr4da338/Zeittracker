@@ -31,7 +31,7 @@ zeittracker/
 
   <br><br>
 
-  <label>Minuten</label>
+  <label>Stunden</label>
   <input type="number" id="minutes">
 
   <button onclick="addTime()">Zeit hinzufügen</button>
